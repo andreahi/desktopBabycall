@@ -33,6 +33,8 @@
             this.label3 = new System.Windows.Forms.Label();
             this.labelStatus = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
+            this.btn_server = new System.Windows.Forms.Button();
+            this.listBoxClients = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
             // 
             // btnConnect
@@ -49,7 +51,7 @@
             // 
             this.textIP.Location = new System.Drawing.Point(33, 46);
             this.textIP.Name = "textIP";
-            this.textIP.Size = new System.Drawing.Size(100, 20);
+            this.textIP.Size = new System.Drawing.Size(193, 20);
             this.textIP.TabIndex = 1;
             // 
             // label3
@@ -71,7 +73,7 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(154, 43);
+            this.button3.Location = new System.Drawing.Point(232, 43);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 5;
@@ -79,9 +81,30 @@
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
+            // btn_server
+            // 
+            this.btn_server.Location = new System.Drawing.Point(354, 44);
+            this.btn_server.Name = "btn_server";
+            this.btn_server.Size = new System.Drawing.Size(75, 23);
+            this.btn_server.TabIndex = 6;
+            this.btn_server.Text = "Ask server";
+            this.btn_server.UseVisualStyleBackColor = true;
+            this.btn_server.Click += new System.EventHandler(this.btn_server_Click);
+            // 
+            // listBoxClients
+            // 
+            this.listBoxClients.FormattingEnabled = true;
+            this.listBoxClients.Location = new System.Drawing.Point(232, 72);
+            this.listBoxClients.Name = "listBoxClients";
+            this.listBoxClients.Size = new System.Drawing.Size(197, 108);
+            this.listBoxClients.TabIndex = 8;
+            this.listBoxClients.SelectedIndexChanged += new System.EventHandler(this.listBoxClients_SelectedIndexChanged);
+            // 
             // Form1
             // 
-            this.ClientSize = new System.Drawing.Size(264, 156);
+            this.ClientSize = new System.Drawing.Size(468, 239);
+            this.Controls.Add(this.listBoxClients);
+            this.Controls.Add(this.btn_server);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.labelStatus);
             this.Controls.Add(this.label3);
@@ -97,25 +120,13 @@
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TextBox IPtext;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem networkToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem portsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem iPToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem keybindingToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem securityToolStripMenuItem;
-        private System.Windows.Forms.CheckBox autoCheckBox;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button btnConnect;
         private System.Windows.Forms.TextBox textIP;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label labelStatus;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button btn_server;
+        private System.Windows.Forms.ListBox listBoxClients;
     }
 }
 

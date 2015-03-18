@@ -13,7 +13,7 @@ using System.Threading;
 using System.IO;
 namespace desktopBabycall
 {
-
+    
     public partial class Form1 : Form
     {
         System.Net.Sockets.TcpClient clientSocket = new System.Net.Sockets.TcpClient();
@@ -21,15 +21,46 @@ namespace desktopBabycall
         System.Net.Sockets.TcpClient videoSocket = new System.Net.Sockets.TcpClient();
         NetworkStream videoStream;
         NetworkStream audioStream;
+        System.Net.Sockets.TcpClient serverSocket = new System.Net.Sockets.TcpClient();
+        NetworkStream serverStream;
         Image img;
         int imgHeight = 0;
         int imgWidth = 0;
         Video video = new Video();
+        List<ClientData> listBoxData = new List<ClientData>();
+        BindingList<ClientData> data = new BindingList<ClientData>();
+
+
+        public const byte USE_VIDEO = 5;
+        public const byte USE_HD_VIDEO = 6;
+        public const byte PASSIVE_STATUS = 7;
+        public const byte AUDIO_DATA = 8;
+        public const byte REGISTER = 9;
+        public const byte VIDEO_DATA = 10;
+        public const byte VIDEO_HEIGHT = 11;
+        public const byte VIDEO_WIDTH = 12;
+
+        public const byte GET = 101;
+        public const byte CLIENT_LIST = 102;
+        public const byte LISTEN = 103;
+
         public Form1()
         {
-            InitializeComponent();
-        }
 
+            InitializeComponent();
+            listBoxClients.DataSource = data;
+            listBoxClients.DisplayMember = "Name";
+    
+        }
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+         
+
+
+            //listBox1.Items.AddRange(GetCustomers().ToArray());            
+        }
         //setup the audio connection
         private Boolean setupAudio(String ip)
         {
@@ -51,7 +82,7 @@ namespace desktopBabycall
           
             WaveOut waveout = new WaveOut();
             //44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
-            BufferedWaveProvider wavProv = new BufferedWaveProvider(new WaveFormat(44100, 16, 1));
+            BufferedWaveProvider wavProv = new BufferedWaveProvider(new WaveFormat(8000, 16, 1));
             waveout.Init(wavProv);
             waveout.Play();
             int offset = 0;
@@ -137,7 +168,89 @@ namespace desktopBabycall
             video.updatePicture(img, imgHeight, imgWidth);
          
         }
-       
+
+        ¨//listen to incomming data
+        void listen()
+        {
+            StringBuilder sb = new StringBuilder();
+            WaveOut waveout = new WaveOut();
+            //44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+            BufferedWaveProvider wavProv = new BufferedWaveProvider(new WaveFormat(44100, 16, 1));
+            waveout.Init(wavProv);
+            waveout.Play();
+            while (true)
+            {
+                byte [] size_buffer = new byte[4];
+                int bytesRead = 0;
+                while (bytesRead < 4)
+                {
+                    int recv = this.serverStream.Read(size_buffer, bytesRead, size_buffer.Length - bytesRead);
+                    if (recv > 0)
+                        bytesRead += recv;
+                }
+
+                int packageSize = byteArrayToInt(size_buffer);
+                byte[] buffer = new byte[packageSize];
+                bytesRead = 0;
+                while (bytesRead < packageSize)
+                {
+                    int recv = this.serverStream.Read(buffer, bytesRead, packageSize - bytesRead);
+                    if (recv > 0)
+                        bytesRead += recv;
+                }
+                if (buffer[0] == CLIENT_LIST)
+                {
+                    string clientName = Encoding.ASCII.GetString(buffer, 1, packageSize-1);
+                     //listBoxClients.Items.Clear();
+                        //listBoxClients.Items.Add(cd);
+                    //listBoxClients.DisplayMember = "Name";
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        data.Add(new ClientData() { id = buffer.Skip(1).Take(buffer.Length-1).ToArray(), Name = clientName });
+
+                    });
+
+                    //listBoxClients.DataSource = listBoxData;
+                 
+                }
+                else if (buffer[0] == AUDIO_DATA)
+                {
+                    byte [] data = buffer.Skip(1).Take(buffer.Length - 1).ToArray();
+                    wavProv.AddSamples(data, 0, data.Length);
+                }
+                else if (buffer[0] == VIDEO_DATA)
+                {
+                 
+
+                    byte[] data = buffer.Skip(1).Take(buffer.Length - 1).ToArray();
+                    MemoryStream ms = new MemoryStream(data);
+                    ms.Position = 0;
+                    this.img = Image.FromStream(ms, true, true);
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        updatePicture();
+                    });
+                }
+                else if (buffer[0] == VIDEO_WIDTH)
+                {
+                    byte[] data = buffer.Skip(1).Take(buffer.Length - 1).ToArray();
+
+                    this.imgWidth = byteArrayToInt(data);
+                }
+                else if (buffer[0] == VIDEO_HEIGHT)
+                {
+                    byte[] data = buffer.Skip(1).Take(buffer.Length - 1).ToArray();
+
+                    this.imgHeight = byteArrayToInt(data);
+                }
+            }
+            
+        }
+       public class SomeData
+{
+    public string Value { get; set; }
+    public string Text { get; set; }
+}
        //try connecting to an IP
         private Boolean tryIP(string ip)
         {
@@ -177,20 +290,21 @@ namespace desktopBabycall
             {
                 try
                 {
-                    clientSocket.Connect(textIP.Text, 13270); //192.168.0.100
-                    NetworkStream serverStream = clientSocket.GetStream();
-                    byte[] VERSION = { 0, 2, 1 };
-                    serverStream.Write(VERSION, 0, VERSION.Length);
-                    serverStream.Flush();
-                    byte[] inStream = new byte[1024];
-                    serverStream.Read(inStream, 0, 3);
+                    
+                        labelStatus.Text = "listening";
+                        byte [] id = (listBoxClients.SelectedItem as ClientData).id;
+                        video.Show();
+                        Send(serverStream, LISTEN, id);
+                       
+                    
+                
                 }
                 catch (SocketException)
                 {
-                    labelStatus.Text = "Connection failed";
+                    //labelStatus.Text = "Connection failed";
                     return;
                 }
-
+                /*
                 //did the audio and video setup go ok?
                 if (setupVideo(textIP.Text) && setupAudio(textIP.Text))
                 {
@@ -204,6 +318,7 @@ namespace desktopBabycall
                 }
                 else
                     labelStatus.Text = "Connection failed";
+                 */ 
                 //new System.Web.FileContentResult(byteArray, "image/jpeg");
             }
             else
@@ -222,5 +337,60 @@ namespace desktopBabycall
         {
 
         }
+
+        private void btn_server_Click(object sender, EventArgs e)
+        {
+            if (this.serverStream == null)
+            {
+                this.serverSocket.Connect("37.191.219.122", 13270);
+                this.serverStream = serverSocket.GetStream();
+                 Thread thread = new Thread(() => listen());
+                 thread.Start();
+            }
+            data.Clear();
+            Send(serverStream, GET, null);
+           
+            
+        }
+        public static byte[] intToByteArray(uint value)
+        {
+            return new byte[] {
+				(byte)(value >> 24),
+				(byte)(value >> 16),
+				(byte)(value >> 8),
+				(byte)value};
+        }
+
+        private static void Send(NetworkStream stream, byte tag, byte[] data)
+        {
+            // Convert the string data to byte data using ASCII encoding.
+            int data_length = (data == null ? 0 : data.Length); 
+            int package_length = data_length + 1;
+            // Begin sending the data to the remote device.
+            byte[] tagA = { tag };
+            stream.Write(intToByteArray((uint)package_length), 0, 4);
+            stream.Write(tagA, 0, tagA.Length);
+            if(data_length > 0)
+            stream.Write(data, 0, data_length);
+
+        }
+
+        private void listBoxClients_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            textIP.Text = listBoxClients.GetItemText(listBoxClients.SelectedItem);
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            data.Add(new ClientData() { id = null, Name = "Andreas" });
+
+        }
+       
+    }
+    public class ClientData
+    {
+        public string Name { get; set; }
+        public byte[]  id { get; set; }
     }
 }
